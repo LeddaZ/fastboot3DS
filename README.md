@@ -9,7 +9,7 @@ Differences between this fork and the official fastboot3DS:
 - NAND backups are stored in `sdmc:/fastboot3DS` instead of `sdmc:/3ds`
 - BootROM & OTP dumps are stored in `sdmc:/fastboot3DS` instead of `sdmc:/3ds`
 - Update menu was removed because it isn't compatible with unofficial builds
-- Update instructions added in `Miscellaneous... menu`
+- Update instructions added in `Miscellaneous...` menu
 
 # How to install/update this fork
 - Copy `fastboot3DS.firm` to the SD card
