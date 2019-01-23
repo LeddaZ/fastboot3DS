@@ -997,21 +997,21 @@ u32 menuDumpBootrom(PrintConsole* term_con, PrintConsole* menu_con, u32 param)
 	// dump boot9.bin
 	ee_printf("%-20.20s", "Dump ARM9 bootrom");
 	u8 *dumpPtr = (u8*)VRAM_BASE + VRAM_SIZE - OTP_SIZE - BOOT11_SIZE - BOOT9_SIZE;
-	bool valid = fsQuickCreate("sdmc:/3ds/boot9.bin", dumpPtr, BOOT9_SIZE);
+	bool valid = fsQuickCreate("sdmc:/fastboot3DS/boot9.bin", dumpPtr, BOOT9_SIZE);
 	ee_printf(valid ? ESC_SCHEME_GOOD "success\n" ESC_RESET : ESC_SCHEME_BAD "failed!\n" ESC_RESET);
 	updateScreens();
 
 	// dump boot11.bin
 	ee_printf("%-20.20s", "Dump ARM11 bootrom");
 	dumpPtr += BOOT9_SIZE;
-	valid = fsQuickCreate("sdmc:/3ds/boot11.bin", dumpPtr, BOOT11_SIZE);
+	valid = fsQuickCreate("sdmc:/fastboot3DS/boot11.bin", dumpPtr, BOOT11_SIZE);
 	ee_printf(valid ? ESC_SCHEME_GOOD "success\n" ESC_RESET : ESC_SCHEME_BAD "failed!\n" ESC_RESET);
 	updateScreens();
 
 	// dump otp.bin
 	ee_printf("%-20.20s", "Dump OTP");
 	dumpPtr += BOOT11_SIZE;
-	valid = fsQuickCreate("sdmc:/3ds/otp.bin", dumpPtr, OTP_SIZE);
+	valid = fsQuickCreate("sdmc:/fastboot3DS/otp.bin", dumpPtr, OTP_SIZE);
 	ee_printf(valid ? ESC_SCHEME_GOOD "success\n" ESC_RESET : ESC_SCHEME_BAD "failed!\n" ESC_RESET);
 	updateScreens();
 
@@ -1038,101 +1038,73 @@ u32 menuDumpBootrom(PrintConsole* term_con, PrintConsole* menu_con, u32 param)
 	return result;
 }
 
-u32 menuUpdateFastboot3ds(PrintConsole* term_con, PrintConsole* menu_con, u32 param)
+u32 menuUpdateInfo(PrintConsole* term_con, PrintConsole* menu_con, u32 param)
 {
+	(void) menu_con;
 	(void) param;
 	
-	char firm_path[FF_MAX_LFN + 1];
-	u32 result = MENU_FAIL;
-	
-	bool accept_downgrades = false;
-	if (configDevModeEnabled())
-		accept_downgrades = true;
-	
-	
-	// file browser dialogue
+	// clear console
 	consoleSelect(term_con);
 	consoleClear();
 	
-	ee_printf_screen_center("Select fastboot3DS update file.\nPress [HOME] to cancel.");
+	// credits
+	term_con->cursorY = 1;
+	ee_printf_line_center("Update instructions");
+	ee_printf_line_center("");
+	ee_printf_line_center("Copy fastboot3DS.firm to SD card");
+	ee_printf_line_center("Boot GodMode9 and select fastboot3DS.firm");
+	ee_printf_line_center("Select FIRM image options -> Install FIRM");
+	ee_printf_line_center("Select Install to FIRM0 and enter the buttton");
+	ee_printf_line_center("combination");
+	ee_printf_line_center("Done!");
 	updateScreens();
-	if (!menuFileSelector(firm_path, menu_con, "sdmc:", "*firm*", true, false))
-		return MENU_FAIL; // cancel by user
-	
-	
-	// verify and install update
-	consoleSelect(term_con);
-	consoleClear();
-	
-	ee_printf(ESC_SCHEME_ACCENT1 "Updating fastboot3DS from file:\n%s\n" ESC_RESET "\nChecking battery... ", firm_path);
-	
-	BatteryState battery;
-	getBatteryState(&battery);
-	if ((battery.percent <= 5) && !battery.charging) {
-		ee_printf(ESC_SCHEME_BAD "low!\n" ESC_RESET);
-		ee_printf("Battery below 5%% and not charging.\nPlug in the charger and retry.\n");
-		goto fail;
-	} else ee_printf(ESC_SCHEME_GOOD "ok\n" ESC_RESET);
-
-	ee_printf("Loading firmware... ");
-	updateScreens();
-	
-	u32 version = 0;
-	s32 res = loadVerifyUpdate(firm_path, &version);
-	if (!accept_downgrades && (res == UPDATE_ERR_DOWNGRADE))
-	{
-		ee_printf(ESC_SCHEME_BAD "failed!\n" ESC_RESET);
-		ee_printf("A newer version is already installed.\n");
-		goto fail;
-	}
-	else if (res != 0)
-	{
-		ee_printf(ESC_SCHEME_BAD "failed!\n" ESC_RESET);
-		switch ( res )
-		{
-			case UPDATE_ERR_INVALID_FIRM:
-				ee_printf("Firm validation failed.\n");
-				break;
-				
-			case UPDATE_ERR_INVALID_SIG:
-				ee_printf("Not a fastboot3DS update firmware.\n");
-				break;
-				
-			case UPDATE_ERR_NOT_INSTALLED:
-				ee_printf("Update is not possible.\n");
-				break;
-				
-			default:
-				ee_printf("Update error code %li!\n", res);
-				break;
-		}
-		goto fail;
-	}
-	
-	ee_printf(ESC_SCHEME_GOOD "v%lu.%lu\n" ESC_RESET "Flashing firmware... ", (version >> 16) & 0xFFFF, version & 0xFFFF);
-	updateScreens();
-	
-	res = writeFirmPartition("firm0:", true);
-	if (res != 0)
-	{
-		ee_printf(ESC_SCHEME_BAD "failed!\n" ESC_RESET);
-		ee_printf("Firm flash error code %li!\n", res);
-		goto fail;
-	}
-	
-	ee_printf(ESC_SCHEME_GOOD "OK\n" ESC_RESET);
-	ee_printf(ESC_SCHEME_GOOD "\nfastboot3DS was updated.\nSystem will reboot.\n" ESC_RESET);
-	result = MENU_RET_REBOOT;
-	
-	
-	fail:
-	
-	ee_printf("\nPress B or HOME to return.");
-	updateScreens();
-	outputEndWait();
 
 	
-	return result;
+	// Konami code
+	const u32 konami_code[] = {
+		KEY_DUP, KEY_DUP, KEY_DDOWN, KEY_DDOWN, KEY_DLEFT, KEY_DRIGHT, KEY_DLEFT, KEY_DRIGHT, KEY_B, KEY_A };
+	const u32 konami = sizeof(konami_code) / sizeof(u32);
+	u32 k = 0;
+	
+	// handle user input
+	u32 kDown = 0;
+	do
+	{
+		GFX_waitForEvent(GFX_EVENT_PDC0, true);
+		
+		if(hidGetPowerButton(false)) // handle power button
+			break;
+		
+		hidScanInput();
+		kDown = hidKeysDown();
+		
+		if (kDown) k = (kDown & konami_code[k]) ? k + 1 : 0;
+		if (!k && (kDown & KEY_B)) break;
+		if (kDown & KEY_SHELL) sleepmode();
+	}
+	while (!(kDown & KEY_HOME) && (k < konami));
+	
+	
+	// Konami code entered?
+	if (k == konami)
+	{
+		const bool enabled = true;
+		configSetKeyData(KDevMode, &enabled);
+		
+		consoleClear();
+		term_con->cursorY = 9;
+		ee_printf(ESC_SCHEME_ACCENT1);
+		ee_printf_line_center("You are now a developer!");
+		ee_printf(ESC_RESET);
+		ee_printf_line_center("");
+		ee_printf_line_center("Access to developer-only features granted.");
+		updateScreens();
+		
+		outputEndWait();
+	}
+	
+	
+	return MENU_OK;
 }
 
 u32 menuShowCredits(PrintConsole* term_con, PrintConsole* menu_con, u32 param)
@@ -1147,8 +1119,8 @@ u32 menuShowCredits(PrintConsole* term_con, PrintConsole* menu_con, u32 param)
 	// credits
 	term_con->cursorY = 1;
 	ee_printf(ESC_SCHEME_ACCENT0);
-	ee_printf_line_center("Fastboot3DS Credits");
-	ee_printf_line_center("===================");
+	ee_printf_line_center("fastboot3DS Credits");
+	ee_printf_line_center("Unofficial fork by LeddaZ");
 	ee_printf_line_center("");
 	ee_printf(ESC_SCHEME_STD);
 	ee_printf_line_center("Main developers:");

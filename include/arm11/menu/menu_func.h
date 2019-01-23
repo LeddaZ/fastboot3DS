@@ -24,7 +24,7 @@
 #include "arm11/console.h"
 
 
-#define NAND_BACKUP_PATH	"sdmc:/3DS" // NAND backups standard path
+#define NAND_BACKUP_PATH	"sdmc:/fastboot3DS" // NAND backups standard path
 #define DEVICE_BUFSIZE		(((REG_CFG11_SOCINFO & 2) ? 1024 : 512) * 1024) // 1024 / 512 KiB
 #define PROGRESS_WIDTH		20
 #define SPLASH_DEFAULT_MSEC	1000
@@ -60,7 +60,7 @@ u32 menuLaunchFirm(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
 u32 menuBackupNand(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
 u32 menuRestoreNand(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
 u32 menuInstallFirm(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
-u32 menuUpdateFastboot3ds(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
+u32 menuUpdateInfo(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
 u32 menuShowCredits(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
 u32 menuDumpBootrom(PrintConsole* term_con, PrintConsole* menu_con, u32 param);
 

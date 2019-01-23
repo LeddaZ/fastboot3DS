@@ -45,8 +45,8 @@
 #define DESC_BOOT_MENU		"Display a boot menu, allowing you to select which boot slot to boot from. Also includes boot slot and boot mode setup."
 #define DESC_BOOT_FILE		"Select a firmware file to boot."
 #define DESC_NAND_TOOLS		"Enter NAND tools submenu, including tools for NAND backup, NAND restore and firmware flash."
-#define DESC_OPTIONS		"Enter fastboot3ds settings submenu."
-#define DESC_MISC			"Enter miscellaneous submenu, including the update tool and credits section."
+#define DESC_OPTIONS		"Enter fastboot3DS settings submenu."
+#define DESC_MISC			"Enter miscellaneous submenu, including the credits section."
 
 #define DESC_BOOT_SLOT(x)	"Boot the firmware in slot #" #x "."
 #define DESC_BOOT_SETUP     "Change boot settings."
@@ -57,25 +57,25 @@
 #define DESC_AUTO_SLOT(x)	"Enable autoboot for boot slot #" #x ".  "
 #define DESC_CLEAR_SLOT(x)	"Reset and disable boot slot #" #x ".    "
 
-#define DESC_BOOT_NORMAL	"In normal boot mode, you will be presented with the fastboot3ds menu upon boot."
+#define DESC_BOOT_NORMAL	"In normal boot mode, you will be presented with the fastboot3DS menu upon boot."
 #define DESC_BOOT_QUICK		"In quick boot mode, splash is displayed and the boot is continued via the first available autoboot slot.\n \n! To enter the menu, hold the HOME button at boot !"
 #define DESC_BOOT_QUIET		"In quiet boot mode, splash is not displayed and the boot is continued via the first available autoboot slot.\n \n! To enter the menu, hold the HOME button at boot !"
 #define DESC_CHANGE_BOOT	"Change fastboot3ds boot mode. This allows you to set up how your console boots."
 #define DESC_FCRAM_BOOT		"Enable booting firm from FCRAM. This is required for proper A9NC and A9SP support, don't enable this if you use neither."
 
-#define DESC_SPLASH_CUSTOM	"Select a custom splash. This is compatible with Luma 3DS format splash screens."
+#define DESC_SPLASH_CUSTOM	"Select a custom splash. This is compatible with Luma3DS format splash screens."
 #define DESC_SPLASH_DEFAULT	"Use default fastboot3DS splash screen."
 #define DESC_SPLASH_DELAY	"Change splash display duration."
-#define DESC_CHANGE_SPLASH	"Change fastboot3ds splash screen. Will only be displayed in normal and quick boot modes."
+#define DESC_CHANGE_SPLASH	"Change fastboot3DS splash screen. Will only be displayed in normal and quick boot modes."
 
 #define DESC_NAND_BACKUP	"Backup current NAND to a file."
 #define DESC_NAND_RESTORE	"Restore current NAND from a file.\nThis option preserves your fastboot3ds installation."
 #define DESC_NAND_RESTORE_F	"Restore current NAND from a file.\nWARNING: This will overwrite all of your flash memory, also overwriting fastboot3ds."
 #define DESC_FIRM_FLASH		"Flash firmware from file to firm1:.\nWARNING: This will allow you to flash unsigned firmware, overwriting anything previously installed in firm1:."
-#define DESC_DUMP_BOOTROM	"Dump boot9.bin, boot11.bin & otp.bin.\nFiles are written to sdmc:/3DS. Your console will power off when finished."
+#define DESC_DUMP_BOOTROM	"Dump boot9.bin, boot11.bin & otp.bin.\nFiles are written to sdmc:/fastboot3DS. Your console will power off when finished."
 
-#define DESC_UPDATE			"Update fastboot3ds. Only signed updates are allowed."
-#define DESC_CREDITS    	"Show fastboot3ds credits."
+#define DESC_UPD_INFO		"Show update instructions for unofficial fastboot3DS builds (like this one)."
+#define DESC_CREDITS    	"Show fastboot3DS credits."
 
 // unused definitions below:
 #define LOREM "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata"
@@ -154,7 +154,7 @@ MenuInfo menu_fb3ds[] =
 	{ // 6
 		"Miscellaneous", 3, NULL, 0,
 		{
-			{ "Update fastboot3DS",			DESC_UPDATE,				&menuUpdateFastboot3ds,	0 },
+			{ "Update instructions",		DESC_UPD_INFO,				&menuUpdateInfo,		0 },
 			{ "Dump bootroms & OTP",		DESC_DUMP_BOOTROM,			&menuDumpBootrom,		0 },
 			{ "Credits",					DESC_CREDITS,				&menuShowCredits,		0 }
 		}

@@ -1,6 +1,22 @@
 # fastboot3DS
 _A bootloader for the 3DS console, written by derrek, profi200, d0k3_
 
+_Unofficial fork by LeddaZ_
+
+Differences between this fork and the official fastboot3DS:
+- Different splash screen
+- Config is stored in `sdmc:/fastboot3DS` instead of `sdmc:/3ds`
+- NAND backups are stored in `sdmc:/fastboot3DS` instead of `sdmc:/3ds`
+- BootROM & OTP dumps are stored in `sdmc:/fastboot3DS` instead of `sdmc:/3ds`
+- Update menu was removed because it isn't compatible with unofficial builds
+
+# How to install/update this fork
+- Copy `fastboot3DS.firm` to the SD card
+- Boot GodMode9 and select `fastboot3DS.firm`
+- Select `FIRM image options` -> `Install FIRM` -> `Install to FIRM0`
+- Enter the button combination
+- Done!
+
 fastboot3DS is a bootloader for the 3DS console, intended to be installed to the FIRM0 partition. It allows you to assign homebrew in .firm format to bootslots, and to chainload bootslots via either a bootmenu or a button combo of your choosing. fastboot3DS also contains basic tools for NAND backups and restores.
 
 ![fastboot3DS on a real N3DS](https://github.com/derrekr/fastboot3DS/blob/master/assets/fastboot_on_n3ds.jpg?raw=true)
