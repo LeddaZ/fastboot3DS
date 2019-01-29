@@ -1051,12 +1051,15 @@ u32 menuUpdateInfo(PrintConsole* term_con, PrintConsole* menu_con, u32 param)
 	term_con->cursorY = 1;
 	ee_printf_line_center("Update instructions");
 	ee_printf_line_center("");
-	ee_printf_line_center("Copy fastboot3DS.firm to SD card");
-	ee_printf_line_center("Boot GodMode9 and select fastboot3DS.firm");
+	ee_printf_line_center("Copy fastboot3DS.firm to SD card root");
+	ee_printf_line_center("Boot GodMode9 and select [0: SDCARD] -> fastboot3DS.firm");
 	ee_printf_line_center("Select FIRM image options -> Install FIRM");
-	ee_printf_line_center("Select Install to FIRM0 and enter the buttton");
-	ee_printf_line_center("combination");
+	ee_printf_line_center("Select Install to both and enter the buttton combination");
 	ee_printf_line_center("Done!");
+	ee_printf_line_center("");
+	ee_printf_line_center("Builds released on GitHub are safe to install on");
+	ee_printf_line_center("both FIRM partitions, but if you are unsafe select");
+	ee_printf_line_center("Install to FIRM0.");
 	updateScreens();
 
 	

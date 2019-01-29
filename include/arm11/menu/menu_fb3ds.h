@@ -60,7 +60,7 @@
 #define DESC_BOOT_NORMAL	"In normal boot mode, you will be presented with the fastboot3DS menu upon boot."
 #define DESC_BOOT_QUICK		"In quick boot mode, splash is displayed and the boot is continued via the first available autoboot slot.\n \n! To enter the menu, hold the HOME button at boot !"
 #define DESC_BOOT_QUIET		"In quiet boot mode, splash is not displayed and the boot is continued via the first available autoboot slot.\n \n! To enter the menu, hold the HOME button at boot !"
-#define DESC_CHANGE_BOOT	"Change fastboot3ds boot mode. This allows you to set up how your console boots."
+#define DESC_CHANGE_BOOT	"Change fastboot3DS boot mode. This allows you to set up how your console boots."
 #define DESC_FCRAM_BOOT		"Enable booting firm from FCRAM. This is required for proper A9NC and A9SP support, don't enable this if you use neither."
 
 #define DESC_SPLASH_CUSTOM	"Select a custom splash. This is compatible with Luma3DS format splash screens."
@@ -70,7 +70,7 @@
 
 #define DESC_NAND_BACKUP	"Backup current NAND to a file."
 #define DESC_NAND_RESTORE	"Restore current NAND from a file.\nThis option preserves your fastboot3ds installation."
-#define DESC_NAND_RESTORE_F	"Restore current NAND from a file.\nWARNING: This will overwrite all of your flash memory, also overwriting fastboot3ds."
+#define DESC_NAND_RESTORE_F	"Restore current NAND from a file.\nWARNING: This will overwrite all of your flash memory, also overwriting fastboot3DS."
 #define DESC_FIRM_FLASH		"Flash firmware from file to firm1:.\nWARNING: This will allow you to flash unsigned firmware, overwriting anything previously installed in firm1:."
 #define DESC_DUMP_BOOTROM	"Dump boot9.bin, boot11.bin & otp.bin.\nFiles are written to sdmc:/fastboot3DS. Your console will power off when finished."
 

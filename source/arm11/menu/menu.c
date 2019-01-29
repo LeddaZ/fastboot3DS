@@ -110,7 +110,7 @@ void menuShowDesc(MenuInfo* curr_menu, PrintConsole* desc_con, u32 index)
 #ifdef NDEBUG
 	const char* title = "fastboot3DS " VERS_STRING "-LeddaZ";
 #else
-	const char* title = "fastboot3DS " VERS_STRING "-LeddaZ" " (debug)";
+	const char* title = "fastboot3DS " VERS_STRING "-LeddaZ (debug)";
 #endif
 	consoleSetCursor(desc_con, (desc_con->windowWidth - strlen(title)) >> 1, 0);
 	ee_printf(ESC_SCHEME_ACCENT0 "%s" ESC_RESET, title);
