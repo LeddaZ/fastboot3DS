@@ -78,5 +78,5 @@ release: clean
 		$(SECTION2_TYPE) $(SECTION2_FILE)
 	@bash patchSuperhaxSection.sh
 	@bash signFirm.sh
-	@7z a -mx -m0=ARM -m1=LZMA $(TARGET)$(VERS_STRING)-LeddaZ.7z $(TARGET).firm
-	@7z u -mx -m0=PPMD $(TARGET)$(VERS_STRING)-LeddaZ.7z LICENSE.txt README.md
+	@7z a -mx -m0=ARM -m1=LZMA $(TARGET)$(VERS_STRING).7z $(TARGET).firm
+	@7z u -mx -m0=PPMD $(TARGET)$(VERS_STRING).7z LICENSE.txt README.md
