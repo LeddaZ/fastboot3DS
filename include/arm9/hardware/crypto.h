@@ -130,14 +130,6 @@ void AES_setCtrIv(AES_ctx *const ctx, u8 orderEndianess, const u32 ctrIv[4]);
 void AES_addCounter(u32 ctr[4], u32 val);
 
 /**
- * @brief      Decrements the internal counter with the given value (CTR mode).
- *
- * @param      ctr   Pointer to the counter data.
- * @param[in]  val   Value to decrement the counter with.
- */
-void AES_subCounter(u32 ctr[4], u32 val);
-
-/**
  * @brief      Sets params in the AES context for all following crypto operations.
  *
  * @param      ctx                Pointer to AES_ctx (AES context).
@@ -210,6 +202,7 @@ bool AES_ccm(const AES_ctx *const ctx, const u32 *const in, u32 *const out, u32 
 
 #define SHA_ENABLE         (1u) // Also used as busy flag
 #define SHA_FINAL_ROUND    (1u<<1)
+#define SHA_IN_DMA_ENABLE  (1u<<2) // Without this NDMA startup is never fires
 #define SHA_INPUT_BIG      (1u<<3)
 #define SHA_INPUT_LITTLE   (0u)
 #define SHA_OUTPUT_BIG     (SHA_INPUT_BIG)
@@ -261,7 +254,17 @@ void SHA_getState(u32 *const out);
  */
 void sha(const u32 *data, u32 size, u32 *const hash, u8 params, u8 hashEndianess);
 
-
+/**
+ * @brief      Hashes a single block of data with DMA and outputs the hash.
+ * @brief      Note: Not recommended. It's way slower than CPU based SHA.
+ *
+ * @param[in]  data           Pointer to data to hash.
+ * @param[in]  size           Size of the data to hash. Must be 64 bytes aligned.
+ * @param      hash           Pointer to memory to copy the hash to.
+ * @param[in]  params         Mode and input endianess bitmask.
+ * @param[in]  hashEndianess  Endianess bitmask for the hash.
+ */
+//void sha_dma(const u32 *data, u32 size, u32 *const hash, u8 params, u8 hashEndianess);
 
 //////////////////////////////////
 //             RSA              //
@@ -307,7 +310,7 @@ void RSA_selectKeyslot(u8 keyslot);
  *
  * @return     Returns true on success, false otherwise.
  */
-bool RSA_setKey2048(u8 keyslot, const u8 *const mod, u32 exp);
+bool RSA_setKey2048(u8 keyslot, const u32 *const mod, u32 exp);
 
 /**
  * @brief      Decrypts a RSA 2048 signature.
@@ -317,7 +320,7 @@ bool RSA_setKey2048(u8 keyslot, const u8 *const mod, u32 exp);
  *
  * @return     Returns true on success, false otherwise.
  */
-bool RSA_decrypt2048(void *const decSig, const void *const encSig);
+bool RSA_decrypt2048(u32 *const decSig, const u32 *const encSig);
 
 /**
  * @brief      Verifies a RSA 2048 SHA 256 signature.

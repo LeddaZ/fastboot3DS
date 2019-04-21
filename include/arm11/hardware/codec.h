@@ -1,6 +1,8 @@
+#pragma once
+
 /*
  *   This file is part of fastboot 3DS
- *   Copyright (C) 2017 derrek, profi200
+ *   Copyright (C) 2019 Sergi Granell (xerpi), Paul LaMendola (paulguy), derrek, profi200
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,27 +19,16 @@
  */
 
 #include "types.h"
-#include "arm9/hardware/interrupt.h"
-#include "arm9/hardware/ndma.h"
-#include "arm9/hardware/timer.h"
-#include "hardware/pxi.h"
-#include "arm9/hardware/crypto.h"
 
 
+/**
+ * @brief      Initialize CODEC for Circle-Pad/Touchscreen.
+ */
+void CODEC_init(void);
 
-void WEAK __systemInit(void)
-{
-	IRQ_init();
-	leaveCriticalSection(0); // Enables interrupts
-	TIMER_init();
-	NDMA_init();
-	AES_init();
-	RSA_init();
-    PXI_init();
-}
-
-void WEAK __systemDeinit(void)
-{
-	NDMA_init();
-	IRQ_init();
-}
+/**
+ * @brief      Get raw ADC data for Circle-Pad/Touchscreen.
+ *
+ * @param[in]  buf   The buffer to write the data to.
+ */
+void CODEC_getRawData(u32 buf[13]);

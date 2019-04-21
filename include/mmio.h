@@ -1,6 +1,6 @@
 /*
  *   This file is part of fastboot 3DS
- *   Copyright (C) 2017 derrek, profi200
+ *   Copyright (C) 2019 Aurora Wright, TuxSH, derrek, profi200
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -16,28 +16,11 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Based on https://github.com/AuroraWright/Luma3DS/blob/master/arm9/source/alignedseqmemcpy.s
+
 #include "types.h"
-#include "arm9/hardware/interrupt.h"
-#include "arm9/hardware/ndma.h"
-#include "arm9/hardware/timer.h"
-#include "hardware/pxi.h"
-#include "arm9/hardware/crypto.h"
 
 
 
-void WEAK __systemInit(void)
-{
-	IRQ_init();
-	leaveCriticalSection(0); // Enables interrupts
-	TIMER_init();
-	NDMA_init();
-	AES_init();
-	RSA_init();
-    PXI_init();
-}
-
-void WEAK __systemDeinit(void)
-{
-	NDMA_init();
-	IRQ_init();
-}
+void iomemcpy(vu32 *restrict dst, const vu32 *restrict src, u32 size);
+void iomemset(vu32 *ptr, u32 value, u32 size);

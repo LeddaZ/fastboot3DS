@@ -20,7 +20,7 @@
 #include "mem_map.h"
 #include "fb_assert.h"
 #include "arm11/hardware/scu.h"
-#include "arm11/start.h"
+#include "mmio.h"
 #include "arm.h"
 
 
@@ -139,21 +139,24 @@ static void mmuMapPages(u32 va, u32 pa, u32 num, u32 *l2Table, bool shared, u8 a
 
 void setupMmu(void)
 {
+	// FCSE PID Register (FCSE PID = 0)
+	// Note: This must be 0 before disabling the MMU otherwise UB
+	__setFcsepidr(0);
+	// Context ID Register (ASID = 0, PROCID = 0)
+	__setCidr(0);
 	// TTBR0 address shared page table walk and outer cachable write-through, no allocate on write
 	__setTtbr0(A11_MMU_TABLES_BASE | 0x12);
 	// Use the 16 KB L1 table only
 	__setTtbcr(0);
 	// Domain 0 = client, remaining domains all = no access
 	__setDacr(1);
-	// Context ID Register (ASID = 0, PROCID = 0)
-	__setCidr(0);
 
 
 	static volatile bool syncFlag = false;
 	if(!__getCpuId())
 	{
 		// Clear L1 and L2 tables
-		clearMem((u32*)A11_MMU_TABLES_BASE, 0x4C00);
+		iomemset((u32*)A11_MMU_TABLES_BASE, 0, 0x4C00);
 
 		// IO mem mapping
 		mmuMapSections(IO_MEM_ARM9_ARM11, IO_MEM_ARM9_ARM11, 4, true,

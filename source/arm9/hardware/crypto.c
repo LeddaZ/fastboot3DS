@@ -16,7 +16,6 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
 #include "mem_map.h"
 #include "fb_assert.h"
 #include "types.h"
@@ -25,6 +24,7 @@
 #include "arm9/hardware/interrupt.h"
 #include "arm9/hardware/ndma.h"
 #include "arm.h"
+#include "mmio.h"
 
 
 
@@ -282,46 +282,20 @@ void AES_setCtrIv(AES_ctx *const ctx, u8 orderEndianess, const u32 ctrIv[4])
 }
 
 // TODO: Handle endianess!
-void AES_addCounter(u32 ctr[4], u32 val)
+NAKED void AES_addCounter(u32 ctr[4], u32 val)
 {
-	fb_assert(ctr != NULL);
-
-	u32 carry, i = 1;
-	u64 sum;
-
-	sum = ctr[0];
-	sum += (val >> 4);
-	carry = sum >> 32;
-	ctr[0] = sum & 0xFFFFFFFFu;
-
-	while(carry)
-	{
-		sum = ctr[i];
-		sum += carry;
-		carry = sum >> 32;
-		ctr[i] = sum & 0xFFFFFFFFu;
-		i++;
-	}
-}
-
-void AES_subCounter(u32 ctr[4], u32 val)
-{
-	fb_assert(ctr != NULL);
-
-	u32 carry, i = 1;
-	u32 sum;
-
-	sum = ctr[0] - (val >> 4);
-	carry = (sum > ctr[0]);
-	ctr[0] = sum;
-
-	while(carry && i < 4)
-	{
-		sum = ctr[i] - carry;
-		carry = (sum > ctr[i]);
-		ctr[i] = sum;
-		i++;
-	}
+    __asm__
+	(
+		"stmfd sp!, {r4, lr}\n\t"
+		"ldm r0, {r2-r4, lr}\n\t"
+		"adds r2, r1, lsr #4\n\t"
+		"addcss r3, r3, #1\n\t"
+		"addcss r4, r4, #1\n\t"
+		"addcs lr, lr, #1\n\t"
+		"stm r0, {r2-r4, lr}\n\t"
+		"ldmfd sp!, {r4, pc}\n\t"
+		: : "r" (ctr), "r" (val) :
+	);
 }
 
 void AES_setCryptParams(AES_ctx *const ctx, u8 inEndianessOrder, u8 outEndianessOrder)
@@ -555,30 +529,29 @@ bool AES_ccm(const AES_ctx *const ctx, const u32 *const in, u32 *const out, u32 
 //             SHA              //
 //////////////////////////////////
 
-#define SHA_REGS_BASE   (IO_MEM_ARM9_ONLY + 0xA000)
-#define REG_SHA_CNT     *((vu32*)(SHA_REGS_BASE + 0x00))
-#define REG_SHA_BLKCNT  *((vu32*)(SHA_REGS_BASE + 0x04))
-#define REG_SHA_HASH     ((u32* )(SHA_REGS_BASE + 0x40))
-#define REG_SHA_INFIFO   (       (SHA_REGS_BASE + 0x80))
+#define SHA_REGS_BASE    (IO_MEM_ARM9_ONLY + 0xA000)
+#define REG_SHA_CNT      *((vu32*)(SHA_REGS_BASE + 0x00))
+#define REG_SHA_BLKCNT   *((vu32*)(SHA_REGS_BASE + 0x04))
+#define REGs_SHA_HASH     ((vu32*)(SHA_REGS_BASE + 0x40))
+#define REGs_SHA_INFIFO   ((vu32*)(SHA_REGS_BASE + 0x80))
 
 
 void SHA_start(u8 params)
 {
-	REG_SHA_CNT = params | SHA_ENABLE;
+	REG_SHA_CNT = params | SHA_IN_DMA_ENABLE | SHA_ENABLE;
 }
 
 void SHA_update(const u32 *data, u32 size)
 {
 	while(size >= 64)
 	{
-		*((_u512*)REG_SHA_INFIFO) = *((const _u512*)data);
-		data += 16;
-		while(REG_SHA_CNT & SHA_ENABLE);
-
+		*((volatile _u512*)REGs_SHA_INFIFO) = *((const _u512*)data);
+		data += 64 / 4;
 		size -= 64;
+		while(REG_SHA_CNT & SHA_ENABLE);
 	}
 
-	if(size) memcpy((void*)REG_SHA_INFIFO, data, size);
+	if(size) iomemcpy(REGs_SHA_INFIFO, data, size);
 }
 
 void SHA_finish(u32 *const hash, u8 endianess)
@@ -591,23 +564,21 @@ void SHA_finish(u32 *const hash, u8 endianess)
 
 void SHA_getState(u32 *const out)
 {
-	u32 stateSize;
+	u32 size;
 	switch(REG_SHA_CNT & SHA_MODE_MASK)
 	{
 		case SHA_MODE_256:
-			stateSize = 32;
+			size = 32;
 			break;
 		case SHA_MODE_224:
-			stateSize = 28;
+			size = 28;
 			break;
 		case SHA_MODE_1:
-			stateSize = 20;
-			break;
-		default:
-			return;
+		default:           // 2 and 3 are both SHA1
+			size = 20;
 	}
 
-	memcpy(out, REG_SHA_HASH, stateSize);
+	iomemcpy(out, REGs_SHA_HASH, size);
 }
 
 void sha(const u32 *data, u32 size, u32 *const hash, u8 params, u8 hashEndianess)
@@ -617,7 +588,20 @@ void sha(const u32 *data, u32 size, u32 *const hash, u8 params, u8 hashEndianess
 	SHA_finish(hash, hashEndianess);
 }
 
-
+/*void sha_dma(const u32 *data, u32 size, u32 *const hash, u8 params, u8 hashEndianess)
+{
+	REG_NDMA2_SRC_ADDR = (u32)data;
+	REG_NDMA2_DST_ADDR = REG_SHA_INFIFO;
+	REG_NDMA2_TOTAL_CNT = size / 4;
+	REG_NDMA2_LOG_BLK_CNT = 64 / 4;
+	REG_NDMA2_INT_CNT = NDMA_INT_SYS_FREQ;
+	REG_NDMA2_CNT = NDMA_DST_UPDATE_INC | NDMA_DST_ADDR_RELOAD | NDMA_SRC_UPDATE_INC |
+	                NDMA_BURST_WORDS(64 / 4) | NDMA_TOTAL_CNT_MODE | NDMA_STARTUP_SHA | NDMA_ENABLE;
+	SHA_start(params);
+	while(REG_NDMA2_CNT & NDMA_ENABLE);
+	while(REG_SHA_CNT & SHA_ENABLE);
+	SHA_finish(hash, hashEndianess);
+}*/
 
 //////////////////////////////////
 //             RSA              //
@@ -631,9 +615,9 @@ void sha(const u32 *data, u32 size, u32 *const hash, u8 params, u8 hashEndianess
 #define REGs_RSA_SLOT2   ((vu32*)(RSA_REGS_BASE + 0x120))
 #define REGs_RSA_SLOT3   ((vu32*)(RSA_REGS_BASE + 0x130))
 #define rsaSlots         ((RsaSlot*)(RSA_REGS_BASE + 0x100))
-#define REG_RSA_EXP      ((vu32*)(RSA_REGS_BASE + 0x200))
-#define REG_RSA_MOD      (       (RSA_REGS_BASE + 0x400))
-#define REG_RSA_TXT      (       (RSA_REGS_BASE + 0x800))
+#define REGs_RSA_EXP     ((vu32*)(RSA_REGS_BASE + 0x200))
+#define REGs_RSA_MOD     ((vu32*)(RSA_REGS_BASE + 0x400))
+#define REGs_RSA_TXT     ((vu32*)(RSA_REGS_BASE + 0x800))
 
 typedef struct
 {
@@ -662,7 +646,7 @@ void RSA_selectKeyslot(u8 keyslot)
 	REG_RSA_CNT = (REG_RSA_CNT & ~RSA_KEYSLOT(0xFu)) | RSA_KEYSLOT(keyslot);
 }
 
-bool RSA_setKey2048(u8 keyslot, const u8 *const mod, u32 exp)
+bool RSA_setKey2048(u8 keyslot, const u32 *const mod, u32 exp)
 {
 	fb_assert(keyslot < 4);
 	fb_assert(mod != NULL);
@@ -674,16 +658,16 @@ bool RSA_setKey2048(u8 keyslot, const u8 *const mod, u32 exp)
 	if(!(slot->REG_RSA_SLOTCNT & RSA_KEY_UNK_BIT31)) slot->REG_RSA_SLOTCNT &= ~RSA_KEY_STAT_SET;
 
 	REG_RSA_CNT = RSA_INPUT_NORMAL | RSA_INPUT_BIG | RSA_KEYSLOT(keyslot);
-	memset((void*)REG_RSA_EXP, 0, 0x100 - 4);
-	REG_RSA_EXP[(0x100>>2) - 1] = exp;
+	iomemset(REGs_RSA_EXP, 0, 0x100 - 4);
+	REGs_RSA_EXP[(0x100>>2) - 1] = exp;
 
 	if(slot->REG_RSA_SLOTSIZE != RSA_SLOTSIZE_2048) return false;
-	memcpy((void*)REG_RSA_MOD, mod, 0x100);
+	iomemcpy(REGs_RSA_MOD, mod, 0x100);
 
 	return true;
 }
 
-bool RSA_decrypt2048(void *const decSig, const void *const encSig)
+bool RSA_decrypt2048(u32 *const decSig, const u32 *const encSig)
 {
 	fb_assert(decSig != NULL);
 	fb_assert(encSig != NULL);
@@ -693,11 +677,11 @@ bool RSA_decrypt2048(void *const decSig, const void *const encSig)
 	if(!(rsaSlots[keyslot].REG_RSA_SLOTCNT & RSA_KEY_STAT_SET)) return false;
 
 	REG_RSA_CNT |= RSA_INPUT_NORMAL | RSA_INPUT_BIG;
-	memcpy((void*)REG_RSA_TXT, encSig, 0x100);
+	iomemcpy(REGs_RSA_TXT, encSig, 0x100);
 
 	REG_RSA_CNT |= RSA_ENABLE;
 	rsaWaitBusy();
-	memcpy(decSig, (void*)REG_RSA_TXT, 0x100);
+	iomemcpy(decSig, REGs_RSA_TXT, 0x100);
 
 	return true;
 }
@@ -707,8 +691,8 @@ bool RSA_verify2048(const u32 *const encSig, const u32 *const data, u32 size)
 	fb_assert(encSig != NULL);
 	fb_assert(data != NULL);
 
-	u8 decSig[0x100];
-	if(!RSA_decrypt2048(decSig, encSig)) return false;
+	alignas(4) u8 decSig[0x100];
+	if(!RSA_decrypt2048((u32*)decSig, encSig)) return false;
 
 	if(decSig[0] != 0x00 || decSig[1] != 0x01) return false;
 

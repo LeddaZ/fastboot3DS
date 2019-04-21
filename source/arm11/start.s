@@ -26,7 +26,6 @@
 .fpu vfpv2
 
 .global _start
-.global clearMem
 .global _init
 .global deinitCpu
 .global __superhaxEnabled
@@ -34,7 +33,6 @@
 .type vectors %function
 .type _start %function
 .type stubExceptionVectors %function
-.type clearMem %function
 .type checkSuperhax %function
 .type setupVfp %function
 .type _init %function
@@ -47,6 +45,8 @@
 .extern __bss_start__
 .extern __bss_end__
 .extern __end__
+.extern iomemset
+.extern iomemcpy
 .extern fake_heap_start
 .extern fake_heap_end
 .extern setupMmu
@@ -92,13 +92,13 @@ _start:
 	@ [22] Unaligned data access              : disabled
 	@ [15] Disable loading TBIT               : disabled
 	@ [13] Vector select                      : 0x00000000
-	@ [12] Level one instruction cache        : disabled
+	@ [12] Level one instruction cache        : enabled
 	@ [11] Program flow prediction            : disabled
 	@ [7]  Endianess                          : little
 	@ [2]  Level one data cache               : disabled
 	@ [1]  Strict data address alignment fault: disabled
 	@ [0]  MMU                                : disabled
-	ldr r3, =0x54078
+	ldr r3, =0x55078
 	mov r4, #0
 	mcr p15, 0, r3, c1, c0, 0   @ Write control register
 	mcr p15, 0, r4, c1, c0, 1   @ Write Auxiliary Control Register
@@ -132,8 +132,9 @@ _start:
 	@ Clear bss section
 	ldr r0, =__bss_start__
 	ldr r1, =__bss_end__
-	sub r1, r1, r0
-	bl clearMem
+    sub r2, r1, r0
+	mov r1, #0
+	bl iomemset
 	@ Setup newlib heap
 	ldr r0, =A11_HEAP_END
 	ldr r1, =fake_heap_end
@@ -181,38 +182,7 @@ stubExceptionVectors:
 
 .pool
 
-
-@ void clearMem(u32 *adr, u32 size)
 .align 2
-clearMem:
-	bics r12, r1, #31
-	mov r2, #0
-	sub r1, r1, r12
-	beq clearMem_check_zero
-	stmfd sp!, {r4-r9}
-	mov r3, #0
-	mov r4, #0
-	mov r5, #0
-	mov r6, #0
-	mov r7, #0
-	mov r8, #0
-	mov r9, #0
-	clearMem_block_lp:
-		stmia r0!, {r2-r9}
-		subs r12, r12, #32
-		bne clearMem_block_lp
-	ldmfd sp!, {r4-r9}
-clearMem_check_zero:
-	cmp r1, #0
-	bxeq lr
-	clearMem_remaining_lp:
-		str r2, [r0], #4
-		subs r1, r1, #4
-		bne clearMem_remaining_lp
-	bx lr
-
-.pool
-
 
 checkSuperhax:
 	ldr r0, =BOOT11_BASE + 0x8000
@@ -221,16 +191,11 @@ checkSuperhax:
 	bxeq lr
 	ldr r1, =__superhaxEnabled
 	mov r2, #1
-	ldr r0, =BOOT11_BASE
+	ldr r0, =VRAM_BASE + VRAM_SIZE - OTP_SIZE - BOOT11_SIZE
 	strb r2, [r1]
-	ldr r1, =VRAM_BASE + VRAM_SIZE - OTP_SIZE - BOOT11_SIZE
-	mov r2, #BOOT11_SIZE
-	checkSuperhax_lp:
-		ldmia r0!, {r3-r6}
-		stmia r1!, {r3-r6}
-		subs r2, r2, #16
-		bne checkSuperhax_lp
-	bx lr
+	ldr r1, =BOOT11_BASE
+	ldr r2, =BOOT11_SIZE
+	b iomemcpy
 
 .pool
 

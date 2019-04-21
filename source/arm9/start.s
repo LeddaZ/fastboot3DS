@@ -26,14 +26,12 @@
 .fpu softvfp
 
 .global _start
-.global clearMem
 .global _init
 .global deinitCpu
 
 .type _start %function
 .type setupExceptionVectors %function
 .type setupTcms %function
-.type clearMem %function
 .type checkSuperhax %function
 .type setupMpu %function
 .type _init %function
@@ -42,6 +40,8 @@
 .extern __bss_start__
 .extern __bss_end__
 .extern __end__
+.extern iomemset
+.extern iomemcpy
 .extern fake_heap_start
 .extern fake_heap_end
 .extern __libc_init_array
@@ -103,8 +103,9 @@ _start:
 	@ Clear bss section
 	ldr r0, =__bss_start__
 	ldr r1, =__bss_end__
-	sub r1, r1, r0
-	bl clearMem
+    sub r2, r1, r0
+	mov r1, #0
+	bl iomemset
 	@ Setup newlib heap
 	ldr r0, =IO_MEM_ARM9_ONLY   @ CFG9 regs
 	ldr r1, [r0, #0xFFC]        @ REG_CFG9_MPCORECFG
@@ -173,60 +174,24 @@ setupTcms:
 
 .pool
 
-
-@ void clearMem(u32 *adr, u32 size)
 .align 2
-clearMem:
-	bics r12, r1, #31
-	mov r2, #0
-	sub r1, r1, r12
-	beq clearMem_check_zero
-	stmfd sp!, {r4-r9}
-	mov r3, #0
-	mov r4, #0
-	mov r5, #0
-	mov r6, #0
-	mov r7, #0
-	mov r8, #0
-	mov r9, #0
-	clearMem_block_lp:
-		stmia r0!, {r2-r9}
-		subs r12, r12, #32
-		bne clearMem_block_lp
-	ldmfd sp!, {r4-r9}
-clearMem_check_zero:
-	cmp r1, #0
-	bxeq lr
-	clearMem_remaining_lp:
-		str r2, [r0], #4
-		subs r1, r1, #4
-		bne clearMem_remaining_lp
-	bx lr
-
-.pool
-
 
 checkSuperhax:
 	ldr r0, =IO_MEM_ARM9_ONLY @ CFG9 regs
 	ldrb r1, [r0]
 	cmp r1, #0
 	bxne lr
-	ldr r0, =BOOT9_BASE
-	ldr r1, =VRAM_BASE + VRAM_SIZE - OTP_SIZE - BOOT11_SIZE - BOOT9_SIZE
+	ldr r0, =VRAM_BASE + VRAM_SIZE - OTP_SIZE - BOOT11_SIZE - BOOT9_SIZE
+	ldr r1, =BOOT9_BASE
 	ldr r2, =BOOT9_SIZE
-	add r12, r1, #BOOT11_SIZE + BOOT9_SIZE
-	checkSuperhax_lp:
-		ldmia r0!, {r3-r6}
-		stmia r1!, {r3-r6}
-		subs r2, r2, #16
-		bne checkSuperhax_lp
-	cmp r12, #0
-	bxeq lr
-	ldr r0, =OTP_BASE
-	mov r1, r12
-	mov r12, #0
+    str lr, [sp, #-4]!
+	mov r4, r0
+	bl iomemcpy
+	ldr lr, [sp], #4
+	add r0, r4, #BOOT11_SIZE + BOOT9_SIZE
+	ldr r1, =OTP_BASE
 	ldr r2, =OTP_SIZE
-	b checkSuperhax_lp
+	b iomemcpy
 
 .pool
 
