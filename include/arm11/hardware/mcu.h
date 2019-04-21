@@ -50,7 +50,7 @@ bool MCU_readBatteryChargeState(void);
 u8 MCU_readSystemModel(void);
 void MCU_readRTC(void *rtc);
 u32 MCU_readReceivedIrqs(void);
-bool MCU_setIrqBitmask(u32 mask)
+bool MCU_setIrqBitmask(u32 mask);
 u8 MCU_readHidHeld(void);
 bool MCU_powerOnLcdBacklights(void);
 bool MCU_setPowerLedState(PwLedState state);
