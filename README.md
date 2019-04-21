@@ -18,7 +18,7 @@ Differences between this fork and the official fastboot3DS:
 - Enter the button combination
 - Done!
 
-Builds released on GitHub are safe to install on both FIRM partitions, but if you are unsafe select `Install to FIRM0`.
+Builds released on GitHub are safe to install on both FIRM partitions, but if you want to be safe select `Install to FIRM0`.
 
 fastboot3DS is a bootloader for the 3DS console, intended to be installed to the FIRM0 partition. It allows you to assign homebrew in .firm format to bootslots, and to chainload bootslots via either a bootmenu or a button combo of your choosing. fastboot3DS also contains basic tools for NAND backups and restores.
 
