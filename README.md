@@ -1,4 +1,6 @@
 # fastboot3DS
+**This fork has been discontinued. Please install the official builds if you want to have a supported version**
+
 _A bootloader for the 3DS console, written by derrek, profi200, d0k3_
 
 _Unofficial fork by LeddaZ_
